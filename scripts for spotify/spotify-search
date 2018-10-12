@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if ! pgrep -q Spotify
+then
+    echo "Error: Spotify is not running"
+    exit 1
+fi
+
+function check {
+    which "$1" || echo "Missing dep: $1"; exit 1
+}
+
+# check deps
+CUT=$(check cut)
+SED=$(check gsed)
+GREP=$(check grep)
+CURL=$(check curl)
+
+ARTIST=$(osascript -e 'tell application "Spotify" to artist of current track as string');
+album=$(osascript -e 'tell application "Spotify" to album of current track as string');
+TRACK=$(osascript -e 'tell application "Spotify" to name of current track as string');
+
+YOUTUBE="https://www.youtube.com"
+LINK="$YOUTUBE/results?search_query="
+URI=$(echo "$ARTIST-$TRACK, hd" | $SED -r 's/ /+/g')
+
+SEARCH=$($CURL -s "$LINK$URI" | $GREP -o 'href=\"/watch?v=.*\"' -m1 | $CUT -d'"' -f2)
+
+open -a "/Applications/Google Chrome.app" "$YOUTUBE$SEARCH"
